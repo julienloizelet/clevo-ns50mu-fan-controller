@@ -12,15 +12,15 @@ using namespace std;
 #define EC_DATA_PORT            0x62
 #define TEMP                    0x9E
 
-#define FAN_MIN_VALUE           40  //minimal rotation speed of the fan (0-255)
+#define FAN_MIN_VALUE           50  //minimal rotation speed of the fan (0-255)
 
-#define FAN_OFF_TEMP            65  //temp below which the fan is off
-#define FAN_25P_TEMP            70  //temp at which fan will be spinning at it's 25% speed.
-#define FAN_50P_TEMP            78  //temp at which fan will be spinning at it's 50% speed.
-#define FAN_75P_TEMP            82  //temp at which fan will be spinning at it's 75% speed.
+#define FAN_OFF_TEMP            50  //temp below which the fan is off
+#define FAN_25P_TEMP            65  //temp at which fan will be spinning at it's 25% speed.
+#define FAN_50P_TEMP            70  //temp at which fan will be spinning at it's 50% speed.
+#define FAN_75P_TEMP            78  //temp at which fan will be spinning at it's 75% speed.
 #define FAN_100P_TEMP           85  //at which temperature and above the fan should be at it's 100%?
 
-#define REFRESH_RATE            250 //time to wait between each controller loop (ms)
+#define REFRESH_RATE            100 //time to wait between each controller loop (ms)
 #define MAX_FAN_SET_INTERVAL    2000//maximal time between two fan rate send command
 
 
