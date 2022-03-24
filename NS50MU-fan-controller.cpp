@@ -13,9 +13,11 @@ using namespace std;
 #define TEMP                    0x9E
 
 #define FAN_MIN_VALUE           50  //minimal rotation speed of the fan (0-255)
+#define AGGRESSIVE_FAN_MULTIPLIER 1.3 // multiplier of the fan speed if performance mode is detected
 
-#define FAN_OFF_TEMP            50  //temp below which the fan is off
-#define FAN_25P_TEMP            65  //temp at which fan will be spinning at it's 25% speed.
+#define FAN_OFF_TOGGLE          0   // 0 and fan never turns off, 1 and fan will turn off if temperature dips below FAN_OFF_TEMP
+#define FAN_OFF_TEMP            53  //temp below which the fan is off
+#define FAN_25P_TEMP            60  //temp at which fan will be spinning at it's 25% speed.
 #define FAN_50P_TEMP            70  //temp at which fan will be spinning at it's 50% speed.
 #define FAN_75P_TEMP            78  //temp at which fan will be spinning at it's 75% speed.
 #define FAN_100P_TEMP           85  //at which temperature and above the fan should be at it's 100%?
@@ -124,6 +126,52 @@ unsigned int unperc(unsigned int fanSpeed){
     return round((float)(fanSpeed)/100*255);
 }
 
+FILE* ppget_create()
+{
+    const char* cmndStr = "powerprofilesctl get";
+    FILE* pipe = popen(cmndStr, "r");
+    if (!pipe) {
+      return NULL;
+    }
+    return pipe;
+}
+
+string ppget_watch(FILE* pipe, char* buffer)
+{
+if (!feof(pipe)) {
+      // use buffer to read and add to result
+      if (fgets(buffer, 128, pipe) != NULL)
+         pclose(pipe);
+         return buffer;
+   }
+  return NULL;
+}
+
+bool check_ppd()
+{
+    char buffer[128];
+    const char* cmndStr = "powerprofilesctl version";
+    FILE* pipe = popen(cmndStr, "r");
+    if (!pipe) {
+      return false;
+    }
+    while (true){
+       if (!feof(pipe)) {
+          // use buffer to read and add to result
+          if (fgets(buffer, 128, pipe) != NULL){
+              pclose(pipe);
+
+              // if we have symbols that far the output is probably not a version.
+              if (int(buffer[10]) != 0){
+                return false;
+              }
+              else {
+                return true;
+              }
+          }
+      }
+    }
+}
 
 int main (int argc, char *argv[])
 {
@@ -131,10 +179,19 @@ int main (int argc, char *argv[])
     int fanSpeed = -1;            //last max speed value, used in combination with FAN_PEAK_HOLD_TIME
     unsigned int maxFanSpeedTime = 0;       //time at which the last max was reached, used in combination with FAN_PEAK_HOLD_TIME
     unsigned int lastTimeFanUpdate = 0;     //use this to periodically set the temp unconditionally (useful when wake of from sleep)
+    char buffer[128];
+    int flip = 0;
+    bool performance_mode = false;
+    bool ppd_enabled = check_ppd();
+    if (ppd_enabled){
+        cout << "Looks like you have Gnome Power Profiles Daemon installed!\n";
+    } else {
+        cout << "Looks like you DO NOT have Gnome Power Profiles Daemon installed!\n";
+    }
     while(1){
         int temp = GetLocalTemp();
 
-        if (temp <= FAN_OFF_TEMP){
+        if (temp <= FAN_OFF_TEMP && FAN_OFF_TOGGLE){
             fanSpeed = 0;
 //            cout << "1! FAN IS OFF";
         }
@@ -161,16 +218,42 @@ int main (int argc, char *argv[])
             fanSpeed = 255;
 //            cout << "6! FAN IS MAX!";
         }
+
+        if (ppd_enabled){
+            flip++;
+        }
+
+        if (flip > 25){
+            flip = 0;
+	        // cout << "performance mode in PPD...";
+            FILE* pipe = ppget_create();
+            string status = ppget_watch(pipe, buffer);
+            if (status == "performance\n"){
+                performance_mode = true;
+                fanSpeed = int( float(fanSpeed) * AGGRESSIVE_FAN_MULTIPLIER);
+		        // cout << "IS enabled";
+            }
+            else {
+                performance_mode = false;
+                // cout << "IS NOT enabled, current mode is: " << status;
+            }
+        }
+
         // Make sure fan speed is within boundaries.
         if(fanSpeed<FAN_MIN_VALUE && fanSpeed != 0){fanSpeed=FAN_MIN_VALUE;}
+        if(!FAN_OFF_TOGGLE && fanSpeed == 0){fanSpeed=FAN_MIN_VALUE;}
         if(fanSpeed>255)fanSpeed=255;
 
         if(lastFanSpeed!=fanSpeed || lastTimeFanUpdate+MAX_FAN_SET_INTERVAL < time()){ 
-        //send value if it changed or if we didn't do it since more than "MAX_FAN_SET_INTERVAL" seconds.
-           setFanSpeed(max(FAN_MIN_VALUE,fanSpeed));
+            //send value if it changed or if we didn't do it since more than "MAX_FAN_SET_INTERVAL" seconds.
+            setFanSpeed(fanSpeed);
             lastTimeFanUpdate=time();
             cout<<"T:"<<temp<<"°C | set fan to "<<perc(fanSpeed)<<"% ("<<fanSpeed<<")";
+            if (performance_mode){
+                cout << " (Increased due to Performance mode enabled)";
+            }
         }
+
         cout<<endl;
         lastFanSpeed=fanSpeed;
         usleep(REFRESH_RATE*1000);
