@@ -1,5 +1,7 @@
 # Clevo-NS50MU automatic fan control
 
+> Cloned from https://gitlab.com/vega-d/clevo-ns50mu-fan-controller
+
 BIOS fan control of my laptop was kinda too noisy, so I adapted a project for ns50mu. 
 
 * check in-processor temperature every 0.5s,
