@@ -44,8 +44,8 @@ sudo make all
 
 This will:
 
-1. build the c++ file into ns50mu-fan-controller and make it executable,
-2. copy ns50mu-fan-controller bin file into /usr/local/bin,
+1. build the c++ file into NS50MU-fan-controller and make it executable,
+2. copy NS50MU-fan-controller bin file into /usr/local/bin,
 3. copy the service file ns50mu-fan-controller.service into /etc/systemd/system/,
 4. enable the service at startup,
 5. launch the service.
@@ -53,7 +53,7 @@ This will:
 You can now check that the service is running:
 
 ```
-systemctl status ns50mu-fan-controller.service
+systemctl status NS50MU-fan-controller.service
 ```
 ## Note
 
