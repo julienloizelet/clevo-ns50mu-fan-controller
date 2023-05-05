@@ -16,8 +16,8 @@ using namespace std;
 
 #define FAN_OFF_TOGGLE          0   // 0 and fan never turns off, 1 and fan will turn off if temperature dips below FAN_OFF_TEMP
 #define FAN_OFF_TEMP            40  //temp below which the fan is off
-#define FAN_25P_TEMP            65  //temp at which fan will be spinning at it's 25% speed.
-#define FAN_50P_TEMP            75  //temp at which fan will be spinning at it's 50% speed.
+#define FAN_25P_TEMP            70  //temp at which fan will be spinning at it's 25% speed.
+#define FAN_50P_TEMP            80  //temp at which fan will be spinning at it's 50% speed.
 #define FAN_75P_TEMP            90  //temp at which fan will be spinning at it's 75% speed.
 #define FAN_100P_TEMP           98  //at which temperature and above the fan should be at it's 100%?
 
@@ -132,7 +132,9 @@ int main (int argc, char *argv[])
     int fanSpeed = -1;            //last max speed value, used in combination with FAN_PEAK_HOLD_TIME
     unsigned int maxFanSpeedTime = 0;       //time at which the last max was reached, used in combination with FAN_PEAK_HOLD_TIME
     unsigned int lastTimeFanUpdate = 0;     //use this to periodically set the temp unconditionally (useful when wake of from sleep)
+    int loopCount = 0;
     while(1){
+
         int temp = GetLocalTemp();
 
         if (temp <= FAN_OFF_TEMP && FAN_OFF_TOGGLE){
@@ -177,7 +179,9 @@ int main (int argc, char *argv[])
             //send value if it changed or if we didn't do it since more than "MAX_FAN_SET_INTERVAL" seconds.
             setFanSpeed(fanSpeed);
             lastTimeFanUpdate=time();
-            if(lastFanSpeed!=fanSpeed){
+            loopCount++;
+            // Log if fanSpeed changed or every 20 loops (journalctl -e -f to see logs)
+            if(lastFanSpeed!=fanSpeed || (loopCount % 20 == 0)){
                 cout<<"T:"<<temp<<"°C | set fan to "<<perc(fanSpeed)<<"% ("<<fanSpeed<<")/255";
             }
         }
