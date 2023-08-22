@@ -21,7 +21,7 @@ using namespace std;
 #define FAN_75P_TEMP            92  //temp at which fan will be spinning at it's 75% speed.
 #define FAN_100P_TEMP           100  //at which temperature and above the fan should be at it's 100%?
 
-#define REFRESH_RATE           100 //time to wait between each controller loop (ms)
+#define REFRESH_RATE           250 //time to wait between each controller loop (ms)
 #define MAX_FAN_SET_INTERVAL    2000//maximal time between two fan rate send command
 
 
